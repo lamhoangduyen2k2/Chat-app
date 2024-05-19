@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Stack } from "react-bootstrap";
 import { useFetchRecipientUser } from "../../hooks/useFetchRecipient";
 import avatar from "../../assets/avatar.svg"
 import { useContext } from "react";
 import { ChatContext } from "../../context/ChatContext";
+import { unreadNotificationsFunc } from "../../utils/unreadNotifications";
+import { useFetchLastMessage } from "../../hooks/useFetchLastMessage";
 
 interface UserChatType {
     chat: { _id: string, members: string[], createdAt: Date, updatedAt: Date };
@@ -20,15 +23,24 @@ interface UserOnlineType {
 
 const UserChat = ({ chat, user }: UserChatType) => {
     const { recipientUser } = useFetchRecipientUser(chat, user);
-    const { onlineUsers } = useContext(ChatContext) as ChatContextType;
+    const { onlineUsers, notifications, markThisUserNotificationsAsRead } = useContext(ChatContext) as ChatContextType;
 
+    const { lastMessage } = useFetchLastMessage(chat);
+
+    const unreadNotifications = unreadNotificationsFunc(notifications);
+    const thisUserNotifications = unreadNotifications?.filter((n) => n.senderId === recipientUser?._id);
     const isOnline = onlineUsers?.some((u: UserOnlineType) => u?.userId === recipientUser?._id)
     return (
         <Stack
             direction="horizontal"
             gap={3}
             className="user-card align-items-center p-2 justify-content-between"
-            role="button">
+            role="button"
+            onClick={() => {
+                if (thisUserNotifications?.length !== 0) {
+                    markThisUserNotificationsAsRead(thisUserNotifications, notifications);
+                }
+            }}>
             <div className="d-flex">
                 <div className="me-2">
                     <img src={avatar} height="35px" />
@@ -42,8 +54,10 @@ const UserChat = ({ chat, user }: UserChatType) => {
                 <div className="date">
                     12/12/2024
                 </div>
-                <div className="this-user-notifications">2</div>
-                <span className={ isOnline ? "user-online" : ""}></span>
+                <div className={thisUserNotifications?.length > 0 ? "this-user-notifications" : ""}>
+                    {thisUserNotifications?.length > 0 ? thisUserNotifications?.length : ""}
+                </div>
+                <span className={isOnline ? "user-online" : ""}></span>
             </div>
         </Stack>);
 }

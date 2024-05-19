@@ -47,6 +47,11 @@ io.on("connection", (socket) => {
 
     if (recipient) {
       io.to(recipient.socketId).emit("getMessage", message);
+      io.to(recipient.socketId).emit("getNotification", {
+        senderId: message.senderId,
+        isRead: false,
+        date: new Date(),                                                                                 
+      })
     }
   });
 
